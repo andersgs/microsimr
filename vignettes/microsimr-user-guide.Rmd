@@ -2,7 +2,9 @@
 title: "microsimr: User guide"
 author: "Anders Gonçalves da Silva"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    fig_caption: true
 vignette: >
   %\VignetteIndexEntry{microsimr: User guide}
   %\VignetteEngine{knitr::rmarkdown}
@@ -11,7 +13,7 @@ bibliography: microsimr_biblio.bib
 ---
 
 ```{r, knitr_options, echo = F}
-#library(microsimr)
+library(microsimr)
 library(ggplot2)
 library(knitr)
 opts_knit$set(cache = T)
@@ -112,7 +114,7 @@ $$
 We can use this relationship to assert if `microsimr` simulations are working as
 expected:
 
-```{r, microsimr_correct, fig.cap = "Distribution of estimates of $\theta$ for 1000 loci simulated using $\theta$ = 50 (marked by the vertical red line). We can see why the variance is big now, the shape of the distribution is typical of coalescent process, and reflects the distribution of tree heights.", eval = FALSE}
+```{r, microsimr_correct, fig.cap = "Distribution of estimates of $\\theta$ for 1000 loci simulated using $\\theta$ = 50 (marked by the vertical red line). We can see why the variance is big now, the shape of the distribution is typical of coalescent process, and reflects the distribution of tree heights."}
 # Here, I simulate data for a single population with theta equal to: 0.5, 5, and 
 # 50. I then estimate theta using the equation above. Because the variance is so
 # large, the estimate of theta will be taken as the mean over 1000 loci.
