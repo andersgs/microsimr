@@ -105,8 +105,8 @@ sim_microsats <- function(theta, n_ind, n_loc, n_pop = NULL, mutation_model = 's
     }
     #this is part of testing. might be removed later
     sim_thetas[t, ] <- 2 * var(alleles)
-    #order the alleles so that they appear in population where they were sampled
-    #order rather than in the order they appear on the tree
+    #order the alleles so that they appear in order of population where they were
+    #sampled order rather than in the order they appear on the tree
     alleles <- alleles[as.numeric(gsub(pattern = "s", replacement = "", x = tree_n$tip.label))]
     #use a "." as the allele separator, and collapse alleles that are in sequential
     #order, thus creating diploid genotypes
