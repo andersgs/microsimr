@@ -4,19 +4,28 @@
 \alias{sim_microsats}
 \title{Simulate micrasatellite data using the coalescent}
 \usage{
-sim_microsats(theta, n_ind, n_loc, ancestral_allele_size = 80,
-  ms_options = NULL)
+sim_microsats(theta, n_ind, n_loc, n_pop = NULL, mutation_model = "smm",
+  ancestral_allele_size = 80, ms_options = NULL)
 }
 \arguments{
 \item{theta}{The per locus mutation rate.}
 
 \item{n_ind}{An integer indicating the number of diploid individuals to be
-simulated.}
+simulated, or a vector indicating how many individuals to sample
+per simulated population}
 
 \item{n_loc}{An integer indicating the number of loci to be simulated.}
 
+\item{n_pop}{An integer indicating the number of populations to be simulated.
+If NULL, then assume n_pop = 1.}
+
+\item{mutation_model}{A character string indicating which mutation model to use.
+Currently, only the strict stepwise mutation model ('smm') is implemented.
+Default is 'smm' (see Details).}
+
 \item{ancestral_allele_size}{An integer indicating the ancestral allele
-size. Default is 80 (see Details).}
+size (i.e, the count of number of repeats of the ancestral allele).
+Default is 80 (see Details).}
 
 \item{ms_options}{A string with additional options to pass on to ms.}
 }
