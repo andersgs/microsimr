@@ -1,58 +1,96 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
+title: "microsimr: User guide"
+author: "Anders Gonçalves da Silva"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{microsimr: User guide}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
-
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
-
-## Vignette Info
-
-Note the various macros within the `vignette` setion of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
-
-## Styles
-
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+```{r, knitr_options, echo = F}
+library(knitr)
+opts_knit$set(cache = T)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+#Introduction
 
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
+The goal of `microsimr` is to provide `R` users with an easy way to simulate
+microsatellite data under the coalescent, and diverse demographic and sampling
+scenarios. `microsimr` takes advantage of the incorporation into `R` of Hudson's
+[`ms`](http://home.uchicago.edu/rhudson1/source/mksamples.html) program 
+accomplished by the package `phyclust`.
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+This is not the first program to use `ms` to generate microsatellite data (e.g., 
+[`microsat`](massey.genomicus.com/software.htm) by Murray Cox), nor
+is it the first to simulate microsatellite data under the coalescent (e.g., 
+[`fastsimcoal2`](http://cmpg.unibe.ch/software/fastsimcoal2/) by Laurent Excoffier
+and colleagues). But, it is the first (to the extent of my knowledge) that does 
+it directly in `R`. Thus, it allows the user direct access to the simulated data
+in `R`, allowing the user easy and immediate access to `R`'s full potential to 
+manipulate and analyze the simulated data.
 
-## More Examples
+An additional, and important distinction, is that `microsimr` takes a different 
+approach to simulating the data to that taken by `microsat`. In `microsat`, the
+output of `ms` for individual chromosomes is randomly transformed into the loss 
+or gain of a microsatellite repeat. The total changes are added to an ancestral
+allele size, thus generating the microsatellite allele for that sample. In other
+words:
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+```{r, sim_microsat}
+# The ms output for three separate samples looks like this:
+# 00011100011
+# 00010010101
+# 00011100011
+# The output represents positions where mutations have occurred, and the 
+# ancestral state 0 has changed to a derived state 1.
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+# In microsat, for all positions in a sample that have mutated from 0 to 1, a 
+# Uniform [0,1] random variable (rv) is generated. If the rv < 0.5, then the 
+# allele looses a single repeat, if the rv ≥ 0.5 then the allele gains a repeat.
+# For sample one, above, we have five 1's, indicating that along the
+# branches of the tree that lead to that sample five mutation events occurred.
+# Thus, five uniform rv would be sampled:
+set.seed(1234590)
+uniform_rvs <- runif(5)
+uniform_rvs
+# These are then transformed into repeat losses or gains:
+repeat_lg <- ifelse(uniform_rvs < 0.5, -1, 1)
+repeat_lg
+# If the ancestral allele size is 80, for example, then the allele for sample 1
+# is:
+80 + sum(repeat_lg)
 ```
 
-Also a quote using `>`:
+This approach ignores the branching pattern, and where mutations occurred along
+the branches. Thus, for two samples that have the same mutation pattern across
+the tree can have different alleles:
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+```{r, diff_alleles}
+# In the ms samples above, samples 1 and 3 have the same mutation pattern. As
+# I presented above, allele for sample 1 has 79 repeats. For sample three, we
+# have 83:
+uniform_rvs <- runif(5)
+uniform_rvs
+repeat_lg <- ifelse(uniform_rvs < 0.5, -1, 1)
+repeat_lg
+80 + sum(repeat_lg)
+```
+
+In `microsimr`, I wanted to take the branching and mutation pattern explicitly 
+into consideration. To do this, `microsimr` simulates trees using `ms` under 
+any of the possible demographic scenarios allowed by `ms`. It then simulates
+the number of mutations along each branch. The number of mutations along a branch
+is modelled as a Poisson random variable with $\lambda{} = \theta{} * branch\_length$,
+ where $\theta$ is the mutation rate per locus scaled by the effective population
+ size ($\theta = 4N_{e}\mu$), and the branch length is given by `ms`. It then
+ applies to individual branches the same approach taken by `microsat`, generating
+ a total change in number of repeats per branch. Finally, for each sample,
+ `microsimr` works out what the total change in size is relative to an ancestral
+ allele size by summing the per branch changes along all branches from the sample
+ to the root of the tree. This approach guarantees that samples with the same 
+ mutation history will have the same allele size. It also allows one to study how 
+ often homoplasy might occur, and how it might affect estimates of population
+ genetic parameters.
+
