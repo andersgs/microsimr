@@ -7,9 +7,12 @@ vignette: >
   %\VignetteIndexEntry{microsimr: User guide}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
+bibliography: microsimr_biblio.bib
 ---
 
 ```{r, knitr_options, echo = F}
+#library(microsimr)
+library(ggplot2)
 library(knitr)
 opts_knit$set(cache = T)
 ```
@@ -64,7 +67,7 @@ repeat_lg
 ```
 
 This approach ignores the branching pattern, and where mutations occurred along
-the branches. Thus, for two samples that have the same mutation pattern across
+the branches. Thus, two samples that have the same mutation pattern across
 the tree can have different alleles:
 
 ```{r, diff_alleles}
@@ -82,10 +85,11 @@ In `microsimr`, I wanted to take the branching and mutation pattern explicitly
 into consideration. To do this, `microsimr` simulates trees using `ms` under 
 any of the possible demographic scenarios allowed by `ms`. It then simulates
 the number of mutations along each branch. The number of mutations along a branch
-is modelled as a Poisson random variable with $\lambda{} = \theta{} * branch\_length$,
+is modelled as a Poisson random variable with $\lambda{} = \theta{} \times t$,
  where $\theta$ is the mutation rate per locus scaled by the effective population
- size ($\theta = 4N_{e}\mu$), and the branch length is given by `ms`. It then
- applies to individual branches the same approach taken by `microsat`, generating
+ size ($\theta = 4N_{e}\mu$), and $t$ is the branch length given by `ms` in units
+ of $4N_{e}$. It then applies to individual branches the same approach taken by 
+ `microsat`, generating
  a total change in number of repeats per branch. Finally, for each sample,
  `microsimr` works out what the total change in size is relative to an ancestral
  allele size by summing the per branch changes along all branches from the sample
@@ -94,3 +98,68 @@ is modelled as a Poisson random variable with $\lambda{} = \theta{} * branch\_le
  often homoplasy might occur, and how it might affect estimates of population
  genetic parameters.
 
+# Ensuring the simulations are correct
+
+We know from the literature that the $\theta$ for microsatellite data can be 
+estimated from the variance in allele size [@Moran:1975gk; @Wehrhahn:1975uw].
+The estimator is unbiased but has an enourmous variance [@Xu:2004gp]. It is 
+calculated as:
+
+$$
+  \hat{\theta} = 2 \times Var(Allele Size)
+$$
+
+We can use this relationship to assert if `microsimr` simulations are working as
+expected:
+
+```{r, microsimr_correct, fig.cap = "Distribution of estimates of $\theta$ for 1000 loci simulated using $\theta$ = 50 (marked by the vertical red line). We can see why the variance is big now, the shape of the distribution is typical of coalescent process, and reflects the distribution of tree heights.", eval = FALSE}
+# Here, I simulate data for a single population with theta equal to: 0.5, 5, and 
+# 50. I then estimate theta using the equation above. Because the variance is so
+# large, the estimate of theta will be taken as the mean over 1000 loci.
+
+# Set simulation parameters
+set.seed(135802)
+n_loci <- 1000
+n_individuals <- 20
+n_populations <- 1
+thetas <- c(0.5, 5, 50)
+
+# Simulate the data
+sim_genotypes <- lapply(thetas, function(t) {
+  microsimr::sim_microsats(theta = t, 
+                           n_ind = n_individuals, 
+                           n_loc = n_loci, 
+                           n_pop = n_populations) 
+  }
+)
+
+# Parse mean allele sizes per locus
+allele_sizes_per_locus <- lapply(sim_genotypes, function(sg) {
+  apply(sg[,3:ncol(sg)], 2, function(g)
+  {2 * var(as.numeric(matrix(
+    do.call(
+      rbind, strsplit(x = g, split = "\\.")), 
+    ncol = 1)))}
+   )
+  }
+)
+# Estimate thetas
+estimate_thetas <- sapply(allele_sizes_per_locus, mean)
+# From the results (below), we can see that the estimated thetas is fairly close to the
+# value used to simulate the data (i.e., 0.5, 5, and 50, respectively).
+# This suggests that the simulations are working as expected.
+estimate_thetas
+
+# We can ascertain that the variance is big by plotting the histogram of one
+# of the simulated datasets
+asl_df = data.frame(theta_0.5 = allele_sizes_per_locus[[1]], 
+                    theta_5.0 = allele_sizes_per_locus[[2]],
+                    theta_50.0 = allele_sizes_per_locus[[3]])
+ggplot(data = asl_df, aes(x = theta_50.0)) + 
+  geom_histogram() +
+  geom_vline(x = 50, col = "red", lwd = 2) +
+  xlab(expression(theta[50])) +
+  ylab("Frequency")
+```
+
+# References
