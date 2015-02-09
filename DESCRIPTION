@@ -2,12 +2,19 @@ Package: microsimr
 Title: Simulate microsatellite data using Hudson's ms program
 Version: 0.0.0.9000
 Authors@R: person("Anders", "Gonçalves da Silva", , "andersgs@gmail.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph)
+Description: microsimr provides functions for simulating microsatellite data under
+            a coalescent using Hudson's ms program. The user is able to analyze
+            the simulated data directly within R. There is also the option of
+            outputting the simulated data in a format suitable for Migrate-N.
+            Functions to output simulated data in other formats can be added
+            upon request (e.g., IMa2 or LAMARC).
 Depends: R (>= 3.1.2)
 License: GPLv2
 LazyData: true
-Imports: 
+Imports:
     ape,
     phyclust
 Suggests: knitr
 VignetteBuilder: knitr
+URL: http://github.com/andersgs/microsimr
+BugReports: http://github.com/andersgs/microsimr/issues
