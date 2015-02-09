@@ -112,6 +112,7 @@ sim_microsats <- function(theta, n_ind, n_loc, n_pop = NULL, mutation_model = 's
     #order, thus creating diploid genotypes
     als = paste(alleles, c("."," "), sep = "")
     als = apply(matrix(als, ncol = 2, byrow = T),1,paste, collapse = "")
+    als = gsub(pattern = "\\s$", replacement = "", x = als)
     #add the genotypes to the genotypes matrix
     genotypes[,(t + 2)] <- als
   }
