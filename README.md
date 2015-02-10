@@ -33,7 +33,7 @@ But, this will take a little longer to install.
 To simulate 100 loci at theta = 5 (per locus mutation rate scaled by the 
 effective population size --- 4Nemu) genotyped across 20 individuals, with
 10 individuals sampled from each of 2 populations exchanging migrants at the
-rate of 15 migrants per generation (4Nem = 20):
+rate of 15 migrants per generation (4Nem = 15):
 
     simd_data <- microsimr::sim_microsats(theta = 5,
                                       n_ind = c(10,10),
