@@ -32,4 +32,30 @@ Default is 80 (see Details).}
 \description{
 Simulate micrasatellite data using the coalescent
 }
+\examples{
+# generate a simulated dataset for a single population with theta = 5,
+# from which 100 loci were genotyped for 20 individuals
+simd_data_1pop <- microsimr::sim_microsats(theta = 5,
+                                           n_ind = 20,
+                                           n_loc = 100,
+                                           n_pop = 1)
+
+# generate a simulated dataset for a three populations with theta = 12,
+# from which 100 loci were genotyped for 20 individuals each sampled from
+# three populations with 20 migrants per generation
+
+simd_data_1pop <- microsimr::sim_microsats(theta = 12,
+                                           n_ind = c(20, 20, 20),
+                                           n_loc = 100,
+                                           n_pop = 3,
+                                           ms_options = "-I 3 40 40 40 20")
+# Notice the 'ms_options' parameter, the -I indicates to model an island
+# population structure model. The three 40's indicate to sample 40 chromosomes
+# from each of the three modeled populations, and the 20 tells ms to simulate
+# populations exchanging 20 migrants per generation. Additional options,
+# including population growth, assymetric migration, isolation, etc. can
+# be modeled by using the right combination of parameters. These are laid
+# out in ms's manual. Examples can be added depending on user's needs. Please
+# request additional examples through the GitHub issues page.
+}
 
