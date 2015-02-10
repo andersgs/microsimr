@@ -16,15 +16,15 @@ interest.
 
 To install `microsimr` you need Hadley Wickam's `devtools`:
 
-  install.packages("devtools")
+    install.packages("devtools")
   
 You can then install `microsimr` by:
 
-  devtools::install_github("andersgs/microsimr")
+    devtools::install_github("andersgs/microsimr")
 
 If you want the vignettes to be installed, you should use:
 
-  devtools::install_github("andersgs/microsimr", build_vignettes = TRUE)
+    devtools::install_github("andersgs/microsimr", build_vignettes = TRUE)
   
 But, this will take a little longer to install.
 
@@ -35,7 +35,7 @@ effective population size --- 4N\mu) genotyped across 20 individuals, with
 10 individuals sampled from each of 2 populations exchanging migrants at the
 rate of 15 migrants per generation (4N_em = 20):
 
-  simd_data <- microsimr::sim_microsats(theta = 5,
+    simd_data <- microsimr::sim_microsats(theta = 5,
                                       n_ind = c(10,10),
                                       n_loc = 100,
                                       n_pop = 2,
@@ -43,7 +43,7 @@ rate of 15 migrants per generation (4N_em = 20):
                                       
 The data can then be saved to a Migrate-N formatted input file thus:
 
-  microsimr::save_microsimr(genotypes = simd_data,
+    microsimr::save_microsimr(genotypes = simd_data,
                           filename = "infile",
                           n_ind = c(10,10),
                           n_pop = 2,
