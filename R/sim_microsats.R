@@ -7,13 +7,32 @@
 #'@param n_loc An integer indicating the number of loci to be simulated.
 #'@param n_pop An integer indicating the number of populations to be simulated.
 #'            If NULL, then assume n_pop = 1.
-#'@param mutation_model A character string indicating which mutation model to use.
-#'        Currently, only the strict stepwise mutation model ('smm') is implemented.
-#'        Default is 'smm' (see Details).
+#'@param mutation_model A character string indicating the mutation model to use.
+#'       Currently, only the strict stepwise mutation model of Ohta and Kimura (1973) ('smm'),
+#'       and the DiRienzo et al. (1994) two-phase model ('tpm') are implemented.
+#'       Default is 'smm'
+#'@param sigma2 Variance in allele size to be used in the 'tpm' model
+#'@param p_single Probability of a single-step mutation to be used in the 'tmp' model
 #'@param ancestral_allele_size An integer indicating the ancestral allele
 #'       size (i.e, the count of number of repeats of the ancestral allele).
 #'       Default is 80 (see Details).
 #'@param ms_options A string with additional options to pass on to ms.
+#'
+#' @details
+#'
+#' A tree is first simulated using 'ms'. Mutations are simulated along the
+#' branches of the tree following a Poisson distribution with lambda proportional
+#' to branch length times theta (4Nmu).
+#'
+#' The number of mutations along the branches are then transformed into gain/loss
+#' of repeat units using \code{mutate_microsats} function.
+#'
+#' Details of each mutation model in the vignette.
+#'
+#' @references
+#' Di Rienzo, A., Peterson, A. C., Garza, J. C., Valdes, A. M., Slatkin, M., & Freimer, N. B. (1994). Mutational processes of simple-sequence repeat loci in human populations. Proceedings of the National Academy of Sciences of the United States of America, 91(8), 3166–3170.
+#'
+#'Ohta, T., & Kimura, M. (2007). A model of mutation appropriate to estimate the number of electrophoretically detectable alleles in a finite population. Genetical Research, 89(5-6), 367–370. http://doi.org/10.1017/S0016672308009531
 #'
 #'@examples
 #'# generate a simulated dataset for a single population with theta = 5,
@@ -49,7 +68,9 @@ sim_microsats <- function(theta,
                           n_pop = NULL,
                           mutation_model = 'smm',
                           ancestral_allele_size = 80,
-                          ms_options = NULL){
+                          ms_options = NULL,
+                          p_single = NULL,
+                          sigma2 = NULL){
   #check if ms_options are ok
   #this section will have to be eventually expanded to allow for more
   #flexible creation of the ms command line, and for error checking.
@@ -73,6 +94,17 @@ sim_microsats <- function(theta,
     stop("n_ind must be an integer or vector. If a vector, it must have length
          equal to n_pop.")
   }
+
+  # checking tpm parameters
+  if(mutation_model == 'tmp') {
+    if(is.null(p_single)) {
+      stop("Specified mutation_model 'tpm', but did not specify a probability of single-step mutations: p_single")
+    }
+    if(is.null(sigma2)) {
+      stop("Specified mutation_model 'tpm', but did not specify variance of multiple-step sizes: sigma2")
+    }
+  }
+
   #generate ms trees using the phyclust library
   out_ms = phyclust::ms(nsam = 2 * total_ind, nreps = n_loc, opts = ms_options)
   #pick out only the lines that have trees in them
@@ -114,7 +146,9 @@ sim_microsats <- function(theta,
     #NOTE: here is were I will need to modify to incorporate additionaal mutation
     #models
     muts = mutate_microsats(n_mutations = sim_mutations,
-                            mutation_model = mutation_model)
+                            mutation_model = mutation_model,
+                            p_single = p_single,
+                            sigma2 = sigma2)
     #create a vector of alleles, primed with the ancestral allele count of repeats.
     #The program will then crawl along the tree starting from the tip, and
     #working towards the root changing the allele size according to the
