@@ -159,9 +159,133 @@ asl_df = data.frame(theta_0.5 = allele_sizes_per_locus[[1]],
                     theta_50.0 = allele_sizes_per_locus[[3]])
 ggplot(data = asl_df, aes(x = theta_50.0)) + 
   geom_histogram() +
-  geom_vline(x = 50, col = "red", lwd = 2) +
+  geom_vline(xintercept = 50, col = "red", lwd = 2) +
   xlab(expression(theta[50])) +
   ylab("Frequency")
 ```
+
+# Multi-step mutation model
+
+## Two-phase DiRienzo et al. (1994) model
+
+In this model DiRienzo *et al.* [-@DiRienzo:1994uq] specify that single-step 
+mutations occur with probability *p*, and multi-step mutations occur with 
+probability *(1-p)*.
+
+The length of a multi-step mutation has *j* repeat units where *j* is modelled
+as a symmetric geometric distribution with parameter $\sigma_{g}^2$:
+
+$$
+P(j | \sigma_{g}^2) \sim C * \alpha^j
+$$
+
+Here, $\sigma_{g}^2$ is the variance in step size, and, *C* is a normalising 
+constant with the constraint that:
+
+$$
+\sum_{j=1}^{\infty} P(j | \sigma_{g}^2 ) = \frac{1}{2}
+$$
+
+This restriction ensure the symmetry of the distribution, and therefore:
+
+$$
+P( j | \sigma_{g}^2) = P( -j | \sigma_{g}^2)
+$$
+
+In this formulation, where $j \ge 1$, it can be shown that the PMF takes the form:
+
+$$
+P(j | \sigma_{g}^2) = (1/2) * \alpha * (1 - \alpha)^{j - 1}
+$$
+
+And, the variance $\sigma_{g}^2$ is:
+
+$$
+\sigma_{g}^2 = \frac{(1 - p)}{p^2}
+$$
+
+If we solve for $\alpha$, and just keep the positive root:
+
+$$
+ \alpha = \frac{(-1 + \sqrt{( 1 + 4 * \sigma_{g}^2 )})}{( 2 * \sigma_{g}^2 )}
+$$
+
+DiRienzo *et al.* [-@DiRienzo:1994uq] make the decision to parameterise their
+distribution according to $\sigma_{g}^2$ because we can relate this information
+to population genetic parameters.
+
+The variance in allele size under this model is:
+
+$$
+\sigma_{m}^2 = p + ( 1 - p) * \sigma_{g}^2
+$$
+
+And, a population with constant size (*N*) over time would have an expected
+variance in allele number of:
+
+$$
+\sigma_{r}^2 = 4 * N_{e} * \mu * \sigma_{m}^2
+$$
+
+Where *4N_{e}* is the mean expected coalescent time $\tau$, and $\mu * \sigma_{m}^2$ is the
+rate of accummulation of the variance in repeat number over time. Another way 
+of sorting the formulat is that $4N_{e}\mu$ is equal to $\theta$, the mutation
+scaled effective population size used in the *ms* coalescent simulator. So, 
+
+$$
+\theta = \frac{\sigma_{r}^2}{\sigma_{m}^2}
+$$
+
+Given this expectation, we can test the current implementation to see if we 
+obtain reasonable results under a constant population size.
+
+```{r}
+set.seed(896766)
+n_loci <- 5000
+n_individuals <- 20
+n_populations <- 1
+thetas <- c(0.5, 5, 50)
+
+# tpm model parameters
+p_single = 0.8 # probability of multi-step mutation is 0.2
+sigma2_g = 50 # typical step-size ~7
+sigma2_m = (p_single + ( (1 - p_single) * sigma2_g ) )
+
+# Simulate the data
+sim_genotypes <- lapply(thetas, function(t) {
+  microsimr::sim_microsats(theta = t, 
+                           n_ind = n_individuals, 
+                           n_loc = n_loci, 
+                           n_pop = n_populations, 
+                           mutation_model = 'tpm', 
+                           p_single = p_single, 
+                           sigma2 =sigma2_g) 
+  }
+)
+
+# Parse mean allele sizes per locus
+allele_sizes_per_locus <- lapply(sim_genotypes, function(sg) {
+  apply(sg[,3:ncol(sg)], 2, function(g)
+  {var(as.numeric(matrix(
+    do.call(
+      rbind, strsplit(x = g, split = "\\.")), 
+    ncol = 1)))}
+   )
+  }
+)
+# Estimate thetas
+estimate_thetas <- sapply(allele_sizes_per_locus, mean)/sigma2_m
+estimate_thetas
+
+asl_df = data.frame(theta_0.5 = allele_sizes_per_locus[[1]]/sigma2_m, 
+                    theta_5.0 = allele_sizes_per_locus[[2]]/sigma2_m,
+                    theta_50.0 = allele_sizes_per_locus[[3]]/sigma2_m)
+ggplot(data = asl_df, aes(x = theta_50.0)) + 
+  geom_histogram() +
+  geom_vline(xintercept = 50, col = "red", lwd = 2) +
+  xlab(expression(theta[50])) +
+  ylab("Frequency")
+```
+
 
 # References
