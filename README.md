@@ -10,7 +10,7 @@ Functions to output simulated data in other formats can be added
 upon request (e.g., IMa2 or LAMARC). Currently, microsimr only simulates 
 microsatellite data under a symmetrical strict stepwise mutation model, 
 and a two-phase mutation model with symmetrical geometric distribution. Other 
-mutation models can be considered if there is interest..
+mutation models can be considered if there is interest.
 
 ## How to get it?
 
